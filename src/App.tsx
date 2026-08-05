@@ -50,7 +50,7 @@ const SPONSOR_AFTER_PLAY_MS = 3 * 60 * 1000
 
 export default function App() {
   const auth = useAuth()
-  const { status: realStatus, loading, connected } = useObserver()
+  const { status: realStatus, loading, connected, setupProgress } = useObserver()
   const notify = useNotify()
   const { play, pause, next, prev, seek, playContext, setVolume, setShuffle, setRepeat } =
     useControls()
@@ -566,6 +566,14 @@ export default function App() {
       </div>
     )
   }
+  if (forced === 'setting-up') {
+    return (
+      <div className={styles.app}>
+        <BootSplash caption="setting things up" progress={47} />
+        {globalOverlays}
+      </div>
+    )
+  }
   if (forced === 'boot-splash') {
     return (
       <div className={styles.app}>
@@ -740,7 +748,10 @@ export default function App() {
     if (!reconnecting && status?.setting_up) {
       return (
         <div className={styles.app}>
-          <BootSplash caption="setting things up" />
+          <BootSplash
+            caption="setting things up"
+            progress={setupProgress ? setupProgress.percent : null}
+          />
           {globalOverlays}
         </div>
       )
