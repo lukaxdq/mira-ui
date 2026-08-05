@@ -43,6 +43,7 @@ import type { ConnectDevice, ObserverStatusActive } from '@/api/types'
 import { getSettings, initSettings, updateSettings, useSettings } from '@/settings'
 import { artSizeFor, heroArtSizeFor } from '@/uiScale'
 import styles from './App.module.scss'
+import ClockScreen from '@/components/ClockScreen/ClockScreen'
 
 const SPONSOR_SHOWN_KEY = 'mira.sponsorShown'
 const SPONSOR_AFTER_PLAY_MS = 3 * 60 * 1000
@@ -73,6 +74,7 @@ export default function App() {
   const btConnectedDevice = knownDevices?.find((d) => d.connected) ?? null
   const topKnownDeviceName = knownDevices?.[0]?.name ?? null
   const [deviceMenuOpen, setDeviceMenuOpen] = useState(false)
+  const [hibernating, setHibernating] = useState(false)
 
   // notification for the playback device changes
   const prevDeviceRef = useRef<string | undefined>(undefined)
@@ -495,6 +497,10 @@ export default function App() {
           closePowerMenu()
           setSponsorOpen(true)
         }}
+        onHibernate={() => {
+          closePowerMenu()
+          setHibernating(true)
+        }}
       />
       <SettingsSheet
         open={settingsOpen}
@@ -516,6 +522,14 @@ export default function App() {
       {sponsorOpenReal ? <SponsorScreen onClose={closeSponsor} /> : null}
     </>
   )
+
+  if (hibernating) {
+    return (
+      <div className={styles.app}>
+        <ClockScreen onExit={() => setHibernating(false)} />
+      </div>
+    )
+  }
 
   if (forced === 'connection-chooser') {
     return (

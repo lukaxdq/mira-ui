@@ -7,10 +7,11 @@ interface Props {
   open: boolean
   onClose: () => void
   onSupport?: () => void
+  onHibernate?: () => void
 }
 
 // power menu
-function PowerMenuImpl({ open, onClose, onSupport }: Props) {
+function PowerMenuImpl({ open, onClose, onSupport, onHibernate }: Props) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [busy, setBusy] = useState<'sleep' | 'restart' | 'reset' | null>(null)
 
@@ -90,6 +91,18 @@ function PowerMenuImpl({ open, onClose, onSupport }: Props) {
             <button type="button" className={styles.action} onClick={onSleep} disabled={!!busy}>
               <MoonIcon />
               <span>Sleep</span>
+            </button>
+            <button
+              type="button"
+              className={styles.action}
+              onClick={() => {
+                if (busy) return
+                if (typeof onHibernate === 'function') onHibernate()
+              }}
+              disabled={!!busy}
+            >
+              <MoonIcon />
+              <span>Hibernate</span>
             </button>
             <button type="button" className={styles.action} onClick={onRestart} disabled={!!busy}>
               <RestartIcon />
