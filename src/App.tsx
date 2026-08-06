@@ -115,7 +115,7 @@ export default function App() {
   const [powerMenuOpenReal, setPowerMenuOpen] = useState(false)
   const [settingsOpenReal, setSettingsOpen] = useState(false)
   const [btMenuOpenReal, setBtMenuOpen] = useState(false)
-  const [playlistsOpen, setPlaylistsOpen] = useState(false)
+  const [playlistsOpenReal, setPlaylistsOpen] = useState(false)
   const [debugOpen, setDebugOpen] = useState(false)
   // support report id dialog
   const [reportId, setReportId] = useState<string | null>(null)
@@ -271,6 +271,7 @@ export default function App() {
   const powerMenuOpen = forced === 'power-menu' ? true : powerMenuOpenReal
   const btMenuOpen = forced === 'bluetooth-menu' ? true : btMenuOpenReal
   const settingsOpen = forced === 'settings' ? true : settingsOpenReal
+  const playlistsOpen = forced === 'playlists' ? true : playlistsOpenReal
   const pairing =
     forced === 'pairing' ? { address: 'AB:CD:EF:01:23:45', passkey: '123456' } : realPairing
 
@@ -338,6 +339,11 @@ export default function App() {
     if (forced === 'power-menu') setForced('playing-lyrics')
   }, [forced, setForced])
 
+  const closePlaylists = useCallback(() => {
+    setPlaylistsOpen(false)
+    if (forced === 'playlists') setForced(null)
+  }, [forced, setForced])
+
   const onSleep = useCallback(() => {
     closePowerMenu()
     void suspendDevice().catch(() => {})
@@ -382,7 +388,7 @@ export default function App() {
       return
     }
     if (playlistsOpen) {
-      setPlaylistsOpen(false)
+      closePlaylists()
       return
     }
     if (deviceMenuOpen) {
@@ -426,6 +432,7 @@ export default function App() {
     closeSponsor,
     debugOpen,
     playlistsOpen,
+    closePlaylists,
     deviceMenuOpen,
     btMenuOpen,
     settingsOpen,
@@ -536,9 +543,9 @@ export default function App() {
       {playlistsOpen ? (
         <Playlists
           open={playlistsOpen}
-          onClose={() => setPlaylistsOpen(false)}
+          onClose={closePlaylists}
           onPlay={(uri) => {
-            setPlaylistsOpen(false)
+            closePlaylists()
             void playContext(uri).catch(() => notify(`Couldn't play this playlist`, { variant: 'error' }))
           }}
         />
@@ -678,6 +685,22 @@ export default function App() {
       <div className={styles.app}>
         <ReconnectingScreen phase="checking" />
         {globalOverlays}
+      </div>
+    )
+  }
+  if (forced === 'playlists') {
+    return (
+      <div className={styles.app}>
+        <Playlists
+          open
+          onClose={() => setForced(null)}
+          onPlay={(uri) => {
+            setForced(null)
+            void playContext(uri).catch(() =>
+              notify(`Couldn't play this playlist`, { variant: 'error' }),
+            )
+          }}
+        />
       </div>
     )
   }

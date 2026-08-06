@@ -19,6 +19,10 @@ function PlaylistsImpl({ open, onPlay }: Props) {
   const loadedRef = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
 
+  // keep the skeleton visible for at least this long so it doesn't flash
+  // away instantly when the daemon responds quickly
+  const MIN_SKELETON_MS = 450
+
   useEffect(() => {
     if (!open) return
     if (loadedRef.current && playlists.length > 0) return
@@ -28,6 +32,7 @@ function PlaylistsImpl({ open, onPlay }: Props) {
     abortRef.current?.abort()
     const ac = new AbortController()
     abortRef.current = ac
+    const startedAt = Date.now()
 
     void fetchPlaylists(ac.signal)
       .then((list) => {
@@ -39,7 +44,14 @@ function PlaylistsImpl({ open, onPlay }: Props) {
         setError(err instanceof Error ? err.message : 'Failed to load playlists')
       })
       .finally(() => {
-        if (!ac.signal.aborted) setLoading(false)
+        if (ac.signal.aborted) return
+        const elapsed = Date.now() - startedAt
+        const remaining = MIN_SKELETON_MS - elapsed
+        if (remaining > 0) {
+          window.setTimeout(() => setLoading(false), remaining)
+        } else {
+          setLoading(false)
+        }
       })
 
     return () => ac.abort()
@@ -69,7 +81,19 @@ function PlaylistsImpl({ open, onPlay }: Props) {
       </div>
 
       {loading && playlists.length === 0 ? (
-        <div className={styles.state}>Loading…</div>
+        <div className={styles.scroll} aria-busy="true" aria-label="Loading playlists">
+          <ul className={styles.row}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li key={i} className={styles.cell}>
+                <div className={styles.skeleton}>
+                  <span className={`${styles.skeletonCover} ${styles.shimmer}`} />
+                  <span className={`${styles.skeletonLine} ${styles.shimmer}`} />
+                  <span className={`${styles.skeletonLine} ${styles.skeletonLineShort} ${styles.shimmer}`} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : error ? (
         <div className={styles.state}>{error}</div>
       ) : playlists.length === 0 ? (

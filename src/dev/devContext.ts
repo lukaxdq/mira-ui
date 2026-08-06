@@ -26,6 +26,7 @@ export type DevForcedScreen =
   | 'reconnect-banner'
   | 'debug'
   | 'sponsor'
+  | 'playlists'
 
 export interface DevScreenCtx {
   forced: DevForcedScreen

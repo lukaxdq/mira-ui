@@ -190,6 +190,60 @@
   }
 }
 
+// skeleton loading placeholders
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.skeletonCover {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: $r-lg;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.skeletonLine {
+  margin-top: $s-2;
+  height: 14px;
+  width: 100%;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.skeletonLineShort {
+  margin-top: 6px;
+  width: 60%;
+  height: 12px;
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.18),
+      transparent
+    );
+    animation: playlistsShimmer 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes playlistsShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .hint {
   color: $text-tertiary;
   font-size: 13px;
