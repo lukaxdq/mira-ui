@@ -55,15 +55,18 @@
   overflow-y: hidden;
   @include hide-scrollbar;
   -webkit-overflow-scrolling: touch;
+  display: flex;
+  align-items: center;
+  padding: $s-4 0;
 }
 
 // horizontal row of playlist cards
 .row {
   list-style: none;
   margin: 0;
-  padding: 0 0 $s-2;
+  padding: 0;
   display: flex;
-  gap: $s-4;
+  gap: $s-5;
   width: max-content;
   min-width: 100%;
 }
@@ -113,8 +116,15 @@
 }
 
 .thumbFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: $fs-3xl;
+  font-weight: $fw-semibold;
   color: $text-tertiary;
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .name {

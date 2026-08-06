@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchPlaylists } from '@/api/client'
 import type { Playlist } from '@/api/types'
 import styles from './Playlists.module.scss'
@@ -64,12 +64,58 @@ function PlaylistsImpl({ open, onPlay }: Props) {
     }
   }, [open])
 
-  if (!open) return null
+  const handlePlay = useCallback(
+    (p: Playlist) => {
+      setPlayingUri(p.uri)
+      onPlay(p.uri)
+    },
+    [onPlay],
+  )
 
-  const handlePlay = (p: Playlist) => {
-    setPlayingUri(p.uri)
-    onPlay(p.uri)
-  }
+  // memoize the card row so it only re-renders when the data actually changes
+  const cardRow = useMemo(
+    () => (
+      <ul className={styles.row}>
+        {playlists.map((p) => (
+          <li key={p.id} className={styles.cell}>
+            <button
+              type="button"
+              className={styles.card}
+              onClick={() => handlePlay(p)}
+              aria-label={`Play ${p.name}`}
+            >
+              <span className={styles.cover}>
+                {p.image_url ? (
+                  <img src={p.image_url} alt="" loading="lazy" decoding="async" fetchPriority="low" />
+                ) : (
+                  <span className={styles.thumbFallback} aria-hidden>
+                    ♪
+                  </span>
+                )}
+                {playingUri === p.uri ? (
+                  <span className={styles.playingBadge} aria-label="playing">
+                    <span className={styles.playingBars} aria-hidden>
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  </span>
+                ) : null}
+              </span>
+              <span className={styles.name}>{p.name}</span>
+              <span className={styles.sub}>
+                Playlist
+                {p.owner ? ` · ${p.owner}` : ''}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    ),
+    [playlists, playingUri, handlePlay],
+  )
+
+  if (!open) return null
 
   return (
     <div className={styles.root} role="dialog" aria-modal="true">
@@ -99,44 +145,7 @@ function PlaylistsImpl({ open, onPlay }: Props) {
       ) : playlists.length === 0 ? (
         <div className={styles.state}>No playlists found</div>
       ) : (
-        <div className={styles.scroll}>
-          <ul className={styles.row}>
-            {playlists.map((p) => (
-              <li key={p.id} className={styles.cell}>
-                <button
-                  type="button"
-                  className={styles.card}
-                  onClick={() => handlePlay(p)}
-                  aria-label={`Play ${p.name}`}
-                >
-                  <span className={styles.cover}>
-                    {p.image_url ? (
-                      <img src={p.image_url} alt="" loading="lazy" />
-                    ) : (
-                      <span className={styles.thumbFallback} aria-hidden>
-                        ♪
-                      </span>
-                    )}
-                    {playingUri === p.uri ? (
-                      <span className={styles.playingBadge} aria-label="playing">
-                        <span className={styles.playingBars} aria-hidden>
-                          <i />
-                          <i />
-                          <i />
-                        </span>
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className={styles.name}>{p.name}</span>
-                  <span className={styles.sub}>
-                    Playlist
-                    {p.owner ? ` · ${p.owner}` : ''}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <div className={styles.scroll}>{cardRow}</div>
       )}
 
       <div className={styles.hint}>Press back to exit</div>

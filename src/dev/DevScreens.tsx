@@ -144,39 +144,41 @@ export function DevOverlay() {
           <span className={styles.kbd}>t to toggle</span>
         </div>
 
-        <button
-          type="button"
-          className={`${styles.row} ${forced === null ? styles.rowActive : ''}`}
-          onClick={() => {
-            setForced(null)
-            setOpen(false)
-          }}
-        >
-          <span className={styles.rowMark}>{forced === null ? '->' : ''}</span>
-          <span className={styles.rowLabel}>Reset (live state)</span>
-          <span className={styles.rowHint}>Stop overriding</span>
-        </button>
+        <div className={styles.list}>
+          <button
+            type="button"
+            className={`${styles.row} ${forced === null ? styles.rowActive : ''}`}
+            onClick={() => {
+              setForced(null)
+              setOpen(false)
+            }}
+          >
+            <span className={styles.rowMark}>{forced === null ? '->' : ''}</span>
+            <span className={styles.rowLabel}>Reset (live state)</span>
+            <span className={styles.rowHint}>Stop overriding</span>
+          </button>
 
-        <div className={styles.divider} aria-hidden />
+          <div className={styles.divider} aria-hidden />
 
-        {SCREENS.map((s) => {
-          const active = forced === s.id
-          return (
-            <button
-              key={s.id}
-              type="button"
-              className={`${styles.row} ${active ? styles.rowActive : ''}`}
-              onClick={() => {
-                setForced(s.id)
-                setOpen(false)
-              }}
-            >
-              <span className={styles.rowMark}>{active ? '->' : ''}</span>
-              <span className={styles.rowLabel}>{s.label}</span>
-              <span className={styles.rowHint}>{s.hint ?? ''}</span>
-            </button>
-          )
-        })}
+          {SCREENS.map((s) => {
+            const active = forced === s.id
+            return (
+              <button
+                key={s.id}
+                type="button"
+                className={`${styles.row} ${active ? styles.rowActive : ''}`}
+                onClick={() => {
+                  setForced(s.id)
+                  setOpen(false)
+                }}
+              >
+                <span className={styles.rowMark}>{active ? '->' : ''}</span>
+                <span className={styles.rowLabel}>{s.label}</span>
+                <span className={styles.rowHint}>{s.hint ?? ''}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

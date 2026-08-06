@@ -22,6 +22,9 @@
 .panel {
   width: 100%;
   max-width: 480px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
   background: $menu-bg;
   border: 1px solid $menu-border;
   border-radius: $r-lg;
@@ -30,6 +33,15 @@
   color: $text-primary;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   animation: panelIn 160ms $ease-standard both;
+}
+
+// scrollable list of screens; keeps the header pinned and the rows
+// scrollable so the panel never overflows the viewport
+.list {
+  min-height: 0;
+  overflow-y: auto;
+  @include hide-scrollbar;
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes panelIn {

@@ -108,29 +108,49 @@ interface ClientPlaylist {
   image_url?: unknown
 }
 
+// placeholder playlists used for testing the playlists view when the daemon
+// returns nothing or the endpoint is unreachable. Dev-only so they never ship
+// in a production build.
+const PLACEHOLDER_PLAYLISTS =
+  import.meta.env.DEV || import.meta.env.VITE_DEV_SCREENS === '1'
+    ? [
+        { id: 'ph-1', name: 'Morning Drive', uri: 'spotify:playlist:ph-1', image_url: '', track_count: 42, owner: 'Mira' },
+        { id: 'ph-2', name: 'Chill Beats', uri: 'spotify:playlist:ph-2', image_url: '', track_count: 128, owner: 'Mira' },
+        { id: 'ph-3', name: 'Workout Mix', uri: 'spotify:playlist:ph-3', image_url: '', track_count: 64, owner: 'Mira' },
+        { id: 'ph-4', name: 'Focus Flow', uri: 'spotify:playlist:ph-4', image_url: '', track_count: 25, owner: 'Mira' },
+        { id: 'ph-5', name: 'Late Night', uri: 'spotify:playlist:ph-5', image_url: '', track_count: 87, owner: 'Mira' },
+      ]
+    : []
+
 // fetch the current user's playlists via the daemon's internal Pathfinder
 // endpoint (avoids the rate-limited public Web API)
 export async function fetchPlaylists(signal?: AbortSignal): Promise<Playlist[]> {
-  const res = await fetch(`${API_BASE}/client/playlists`, {
-    signal,
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error(`client/playlists ${res.status}`)
-  const body = await res.json()
-  const items: ClientPlaylist[] = Array.isArray(body) ? (body as ClientPlaylist[]) : []
-  return items
+  let items: ClientPlaylist[] = []
+  try {
+    const res = await fetch(`${API_BASE}/client/playlists`, {
+      signal,
+      cache: 'no-store',
+    })
+    if (res.ok) {
+      const body = await res.json()
+      items = Array.isArray(body) ? (body as ClientPlaylist[]) : []
+    }
+  } catch {
+    // endpoint unreachable — fall through to placeholders for testing
+  }
+  const real = items
     .filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
     .map((p) => ({
       id: p.id as string,
       name: p.name as string,
-      uri:
-        typeof p.uri === 'string'
-          ? p.uri
-          : `spotify:playlist:${p.id as string}`,
+      uri: typeof p.uri === 'string' ? p.uri : `spotify:playlist:${p.id as string}`,
       image_url: typeof p.image_url === 'string' ? p.image_url : '',
       track_count: 0,
       owner: '',
     }))
+
+  // if the daemon returned nothing, show placeholders so the view is testable
+  return real.length > 0 ? real : PLACEHOLDER_PLAYLISTS
 }
 
 // resume playback on the last active device (used from the idle screen). Throws

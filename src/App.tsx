@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlbumArt } from '@/components/AlbumArt'
 import { AuthScreen } from '@/components/AuthScreen'
 import { BluetoothMenu } from '@/components/BluetoothMenu'
@@ -14,7 +14,6 @@ import { NoLyricsView } from '@/components/NoLyricsView'
 import { PairingDialog } from '@/components/PairingDialog'
 import { ReportDialog } from '@/components/ReportDialog'
 import { PcConnect } from '@/components/PcConnect'
-import { Playlists } from '@/components/Playlists/Playlists'
 import { PowerMenu } from '@/components/PowerMenu'
 import { ProgressBar } from '@/components/ProgressBar'
 import { ReconnectBanner, type ReconnectReason } from '@/components/ReconnectBanner'
@@ -48,6 +47,12 @@ import ClockScreen from '@/components/ClockScreen/ClockScreen'
 
 const SPONSOR_SHOWN_KEY = 'mira.sponsorShown'
 const SPONSOR_AFTER_PLAY_MS = 3 * 60 * 1000
+
+// Heavy overlay — only loaded when the playlists view is actually opened, so
+// it doesn't burden the low-powered Car Thing at startup.
+const Playlists = lazy(() =>
+  import('@/components/Playlists/Playlists').then((m) => ({ default: m.Playlists })),
+)
 
 export default function App() {
   const auth = useAuth()
@@ -541,14 +546,16 @@ export default function App() {
       ) : null}
       {btMenuOpen ? <BluetoothMenu online={online} onClose={() => setBtMenuOpen(false)} /> : null}
       {playlistsOpen ? (
-        <Playlists
-          open={playlistsOpen}
-          onClose={closePlaylists}
-          onPlay={(uri) => {
-            closePlaylists()
-            void playContext(uri).catch(() => notify(`Couldn't play this playlist`, { variant: 'error' }))
-          }}
-        />
+        <Suspense fallback={null}>
+          <Playlists
+            open={playlistsOpen}
+            onClose={closePlaylists}
+            onPlay={(uri) => {
+              closePlaylists()
+              void playContext(uri).catch(() => notify(`Couldn't play this playlist`, { variant: 'error' }))
+            }}
+          />
+        </Suspense>
       ) : null}
       <DebugScreen open={debugOpen} onClose={() => setDebugOpen(false)} onReport={setReportId} />
       {pairing ? <PairingDialog passkey={pairing.passkey} address={pairing.address} /> : null}
@@ -691,16 +698,18 @@ export default function App() {
   if (forced === 'playlists') {
     return (
       <div className={styles.app}>
-        <Playlists
-          open
-          onClose={() => setForced(null)}
-          onPlay={(uri) => {
-            setForced(null)
-            void playContext(uri).catch(() =>
-              notify(`Couldn't play this playlist`, { variant: 'error' }),
-            )
-          }}
-        />
+        <Suspense fallback={null}>
+          <Playlists
+            open
+            onClose={() => setForced(null)}
+            onPlay={(uri) => {
+              setForced(null)
+              void playContext(uri).catch(() =>
+                notify(`Couldn't play this playlist`, { variant: 'error' }),
+              )
+            }}
+          />
+        </Suspense>
       </div>
     )
   }
