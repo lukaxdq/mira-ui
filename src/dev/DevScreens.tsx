@@ -64,6 +64,7 @@ const SCREENS: ScreenDef[] = [
   { id: 'setting-up', label: 'Setting up', hint: 'First-run indexing w/ progress bar' },
   { id: 'auth', label: 'Auth (QR code)', hint: 'OAuth pairing screen' },
   { id: 'idle', label: 'Idle (no playback)' },
+  { id: 'idle-clock', label: 'Idle: clock', hint: 'Clock screen before device picker' },
   { id: 'playing-lyrics', label: 'Playing: lyrics' },
   { id: 'playing-no-lyrics', label: 'Playing: no lyrics' },
   { id: 'pairing', label: 'Pairing dialog', hint: 'Over the player view' },
@@ -99,7 +100,7 @@ export function DevOverlay() {
         target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
       if (inEditable) return
 
-      if (e.key === '`' && !e.repeat) {
+      if (e.key === 't' && !e.repeat) {
         e.preventDefault()
         setOpen((v) => !v)
         return
@@ -121,7 +122,7 @@ export function DevOverlay() {
         type="button"
         className={styles.badge}
         onClick={() => setOpen(true)}
-        title="Open dev screens (`)"
+        title="Open dev screens (t)"
       >
         DEV - {forced}
       </button>
@@ -139,7 +140,7 @@ export function DevOverlay() {
       >
         <div className={styles.header}>
           <span className={styles.title}>Dev screens</span>
-          <span className={styles.kbd}>` to toggle</span>
+          <span className={styles.kbd}>t to toggle</span>
         </div>
 
         <button

@@ -12,6 +12,7 @@ export type DevForcedScreen =
   | 'boot-splash'
   | 'auth'
   | 'idle'
+  | 'idle-clock'
   | 'playing-lyrics'
   | 'playing-no-lyrics'
   | 'pairing'

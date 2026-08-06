@@ -75,6 +75,8 @@ export default function App() {
   const topKnownDeviceName = knownDevices?.[0]?.name ?? null
   const [deviceMenuOpen, setDeviceMenuOpen] = useState(false)
   const [hibernating, setHibernating] = useState(false)
+  // idle shows the clock first; tapping it reveals the device picker
+  const [idleClock, setIdleClock] = useState(true)
 
   // notification for the playback device changes
   const prevDeviceRef = useRef<string | undefined>(undefined)
@@ -397,6 +399,11 @@ export default function App() {
       closeMenu()
       return
     }
+    // back out of the idle device picker to the clock
+    if (!idleClock && !status?.active) {
+      setIdleClock(true)
+      return
+    }
     if (onOfflineSetup && offlineMethod !== 'chooser') {
       setOfflineMethod('chooser')
       return
@@ -419,6 +426,8 @@ export default function App() {
     closePowerMenu,
     menuOpen,
     closeMenu,
+    idleClock,
+    status,
     onOfflineSetup,
     offlineMethod,
     setupOverride,
@@ -613,6 +622,14 @@ export default function App() {
       </div>
     )
   }
+  if (forced === 'idle-clock') {
+    return (
+      <div className={styles.app} onClick={() => setForced('idle')}>
+        <ClockScreen />
+        {globalOverlays}
+      </div>
+    )
+  }
   if (forced === 'reconnecting') {
     return (
       <div className={styles.app}>
@@ -760,11 +777,15 @@ export default function App() {
     if (!reconnecting && (!status || !status.active)) {
       return (
         <div className={styles.app}>
-          <IdleScreen
-            connected={connected}
-            devices={connectDevices}
-            onSelectDevice={onPickDevice}
-          />
+          {idleClock ? (
+            <ClockScreen onExit={() => setIdleClock(false)} />
+          ) : (
+            <IdleScreen
+              connected={connected}
+              devices={connectDevices}
+              onSelectDevice={onPickDevice}
+            />
+          )}
           {globalOverlays}
         </div>
       )
