@@ -9,8 +9,9 @@ interface Props {
   onPlay: (uri: string) => void
 }
 
-// a compact, animated playlist picker accessed by double-pressing back
-function PlaylistsImpl({ open, onClose, onPlay }: Props) {
+// Full-screen playlist library view with a horizontally scrollable row of
+// playlist cards, opened by double-pressing back.
+function PlaylistsImpl({ open, onPlay }: Props) {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,30 +60,32 @@ function PlaylistsImpl({ open, onClose, onPlay }: Props) {
   }
 
   return (
-    <div className={styles.backdrop} onClick={onClose}>
-      <div className={styles.card} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <span className={styles.title}>Playlists</span>
-          <span className={styles.count}>{playlists.length > 0 ? `${playlists.length}` : ''}</span>
-        </div>
+    <div className={styles.root} role="dialog" aria-modal="true">
+      <div className={styles.header}>
+        <span className={styles.title}>Your Playlists</span>
+        <span className={styles.count}>
+          {playlists.length > 0 ? `${playlists.length} playlists` : ''}
+        </span>
+      </div>
 
-        {loading && playlists.length === 0 ? (
-          <div className={styles.state}>Loading…</div>
-        ) : error ? (
-          <div className={styles.state}>{error}</div>
-        ) : playlists.length === 0 ? (
-          <div className={styles.state}>No playlists found</div>
-        ) : (
-          <ul className={styles.list}>
+      {loading && playlists.length === 0 ? (
+        <div className={styles.state}>Loading…</div>
+      ) : error ? (
+        <div className={styles.state}>{error}</div>
+      ) : playlists.length === 0 ? (
+        <div className={styles.state}>No playlists found</div>
+      ) : (
+        <div className={styles.scroll}>
+          <ul className={styles.row}>
             {playlists.map((p) => (
-              <li key={p.id}>
+              <li key={p.id} className={styles.cell}>
                 <button
                   type="button"
-                  className={styles.row}
+                  className={styles.card}
                   onClick={() => handlePlay(p)}
                   aria-label={`Play ${p.name}`}
                 >
-                  <span className={styles.thumb}>
+                  <span className={styles.cover}>
                     {p.image_url ? (
                       <img src={p.image_url} alt="" loading="lazy" />
                     ) : (
@@ -90,21 +93,29 @@ function PlaylistsImpl({ open, onClose, onPlay }: Props) {
                         ♪
                       </span>
                     )}
+                    {playingUri === p.uri ? (
+                      <span className={styles.playingBadge} aria-label="playing">
+                        <span className={styles.playingBars} aria-hidden>
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      </span>
+                    ) : null}
                   </span>
-                  <span className={styles.meta}>
-                    <span className={styles.name}>{p.name}</span>
-                    <span className={styles.sub}>
-                      {p.track_count > 0 ? `${p.track_count} tracks` : 'Playlist'}
-                      {p.owner ? ` · ${p.owner}` : ''}
-                    </span>
+                  <span className={styles.name}>{p.name}</span>
+                  <span className={styles.sub}>
+                    Playlist
+                    {p.owner ? ` · ${p.owner}` : ''}
                   </span>
-                  {playingUri === p.uri ? <span className={styles.playingDot} aria-label="playing" /> : null}
                 </button>
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
+
+      <div className={styles.hint}>Press back to exit</div>
     </div>
   )
 }
