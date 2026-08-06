@@ -100,25 +100,24 @@ export async function fetchConnectDevices(signal?: AbortSignal): Promise<Connect
   return Array.isArray(body?.devices) ? (body.devices as ConnectDevice[]) : []
 }
 
-// shape of an item in the GET /v1/me/playlists response
-interface WebApiPlaylist {
+// shape of an item in the daemon's /client/playlists response
+interface ClientPlaylist {
   id?: unknown
   name?: unknown
   uri?: unknown
-  images?: { url?: unknown }[]
-  tracks?: { total?: unknown }
-  owner?: { display_name?: unknown }
+  image_url?: unknown
 }
 
-// fetch the current user's playlists via the daemon's web-api proxy
+// fetch the current user's playlists via the daemon's internal Pathfinder
+// endpoint (avoids the rate-limited public Web API)
 export async function fetchPlaylists(signal?: AbortSignal): Promise<Playlist[]> {
-  const res = await fetch(`${API_BASE}/web-api/v1/me/playlists?limit=50`, {
+  const res = await fetch(`${API_BASE}/client/playlists`, {
     signal,
     cache: 'no-store',
   })
-  if (!res.ok) throw new Error(`web-api/me/playlists ${res.status}`)
+  if (!res.ok) throw new Error(`client/playlists ${res.status}`)
   const body = await res.json()
-  const items: WebApiPlaylist[] = Array.isArray(body?.items) ? (body.items as WebApiPlaylist[]) : []
+  const items: ClientPlaylist[] = Array.isArray(body) ? (body as ClientPlaylist[]) : []
   return items
     .filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
     .map((p) => ({
@@ -128,13 +127,9 @@ export async function fetchPlaylists(signal?: AbortSignal): Promise<Playlist[]> 
         typeof p.uri === 'string'
           ? p.uri
           : `spotify:playlist:${p.id as string}`,
-      image_url:
-        Array.isArray(p.images) && p.images.length > 0 && typeof p.images[0]?.url === 'string'
-          ? p.images[0].url
-          : '',
-      track_count: typeof p.tracks?.total === 'number' ? p.tracks.total : 0,
-      owner:
-        p.owner && typeof p.owner.display_name === 'string' ? p.owner.display_name : '',
+      image_url: typeof p.image_url === 'string' ? p.image_url : '',
+      track_count: 0,
+      owner: '',
     }))
 }
 

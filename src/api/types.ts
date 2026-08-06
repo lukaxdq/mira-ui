@@ -26,14 +26,14 @@ export interface ConnectDevice {
   can_transfer: boolean
 }
 
-// a Spotify playlist (from /web-api/v1/me/playlists)
+// a Spotify playlist (from the daemon's /client/playlists endpoint)
 export interface Playlist {
   id: string
   name: string
   uri: string
   image_url: string
-  track_count: number
-  owner: string
+  track_count?: number
+  owner?: string
 }
 
 export interface QueueTrack {
