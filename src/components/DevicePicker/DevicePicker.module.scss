@@ -36,6 +36,10 @@
   width: 420px;
   max-width: calc(100% - #{$s-6});
   max-height: calc(100% - #{$s-6});
+  // flex item of .backdrop (flex-center): without min-height:0 the card's
+  // min-height:auto keeps it at content height, so max-height is ignored
+  // and it overflows instead of scrolling
+  min-height: 0;
   overflow-y: auto;
   padding: $s-6;
   background: $bg;

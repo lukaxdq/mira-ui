@@ -5,6 +5,7 @@ import type {
   LyricsResult,
   ObserverStatus,
   ObserverStatusActive,
+  Playlist,
   RemoteStateWire,
 } from './types'
 
@@ -97,6 +98,44 @@ export async function fetchConnectDevices(signal?: AbortSignal): Promise<Connect
   if (!res.ok) throw new Error(`connect/devices ${res.status}`)
   const body = await res.json()
   return Array.isArray(body?.devices) ? (body.devices as ConnectDevice[]) : []
+}
+
+// shape of an item in the GET /v1/me/playlists response
+interface WebApiPlaylist {
+  id?: unknown
+  name?: unknown
+  uri?: unknown
+  images?: { url?: unknown }[]
+  tracks?: { total?: unknown }
+  owner?: { display_name?: unknown }
+}
+
+// fetch the current user's playlists via the daemon's web-api proxy
+export async function fetchPlaylists(signal?: AbortSignal): Promise<Playlist[]> {
+  const res = await fetch(`${API_BASE}/web-api/v1/me/playlists?limit=50`, {
+    signal,
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`web-api/me/playlists ${res.status}`)
+  const body = await res.json()
+  const items: WebApiPlaylist[] = Array.isArray(body?.items) ? (body.items as WebApiPlaylist[]) : []
+  return items
+    .filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
+    .map((p) => ({
+      id: p.id as string,
+      name: p.name as string,
+      uri:
+        typeof p.uri === 'string'
+          ? p.uri
+          : `spotify:playlist:${p.id as string}`,
+      image_url:
+        Array.isArray(p.images) && p.images.length > 0 && typeof p.images[0]?.url === 'string'
+          ? p.images[0].url
+          : '',
+      track_count: typeof p.tracks?.total === 'number' ? p.tracks.total : 0,
+      owner:
+        p.owner && typeof p.owner.display_name === 'string' ? p.owner.display_name : '',
+    }))
 }
 
 // resume playback on the last active device (used from the idle screen). Throws

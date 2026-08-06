@@ -14,6 +14,9 @@ export interface Settings {
   brightness: number
   voiceMic: boolean
   uiScalePct: number
+  timezoneMode: 'auto' | 'manual'
+  utcOffsetMinutes: number
+  timeFormat: '12h' | '24h'
   presets: Record<number, PresetConfig>
 }
 
@@ -39,6 +42,9 @@ const DEFAULTS: Settings = {
   brightness: 5,
   voiceMic: true,
   uiScalePct: UI_SCALE_DEFAULT,
+  timezoneMode: 'auto',
+  utcOffsetMinutes: 0,
+  timeFormat: '24h',
   presets: {},
 }
 
@@ -72,8 +78,22 @@ function coerce(partial: Partial<Settings> | null | undefined): Settings {
     brightness: clamp(partial?.brightness ?? DEFAULTS.brightness, BRIGHTNESS_MIN, BRIGHTNESS_MAX),
     voiceMic: partial?.voiceMic ?? DEFAULTS.voiceMic,
     uiScalePct: coerceUiScale(partial?.uiScalePct),
+    timezoneMode: partial?.timezoneMode === 'manual' ? 'manual' : 'auto',
+    utcOffsetMinutes: coerceOffset(partial?.utcOffsetMinutes),
+    timeFormat: partial?.timeFormat === '12h' ? '12h' : '24h',
     presets: partial?.presets ?? {},
   }
+}
+
+// the clock is set to UTC on the device; allow a manual offset of
+// -12h..+14h in 15-minute steps (matches real-world timezones)
+const OFFSET_MIN = -720
+const OFFSET_MAX = 840
+const OFFSET_STEP = 15
+function coerceOffset(raw: unknown): number {
+  const n = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN
+  if (!Number.isFinite(n)) return DEFAULTS.utcOffsetMinutes
+  return Math.round(Math.min(OFFSET_MAX, Math.max(OFFSET_MIN, n)) / OFFSET_STEP) * OFFSET_STEP
 }
 
 function readLocal(): Settings {

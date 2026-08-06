@@ -14,6 +14,7 @@ import { NoLyricsView } from '@/components/NoLyricsView'
 import { PairingDialog } from '@/components/PairingDialog'
 import { ReportDialog } from '@/components/ReportDialog'
 import { PcConnect } from '@/components/PcConnect'
+import { Playlists } from '@/components/Playlists/Playlists'
 import { PowerMenu } from '@/components/PowerMenu'
 import { ProgressBar } from '@/components/ProgressBar'
 import { ReconnectBanner, type ReconnectReason } from '@/components/ReconnectBanner'
@@ -114,6 +115,7 @@ export default function App() {
   const [powerMenuOpenReal, setPowerMenuOpen] = useState(false)
   const [settingsOpenReal, setSettingsOpen] = useState(false)
   const [btMenuOpenReal, setBtMenuOpen] = useState(false)
+  const [playlistsOpen, setPlaylistsOpen] = useState(false)
   const [debugOpen, setDebugOpen] = useState(false)
   // support report id dialog
   const [reportId, setReportId] = useState<string | null>(null)
@@ -379,6 +381,10 @@ export default function App() {
       setDebugOpen(false)
       return
     }
+    if (playlistsOpen) {
+      setPlaylistsOpen(false)
+      return
+    }
     if (deviceMenuOpen) {
       setDeviceMenuOpen(false)
       return
@@ -419,6 +425,7 @@ export default function App() {
     sponsorOpenReal,
     closeSponsor,
     debugOpen,
+    playlistsOpen,
     deviceMenuOpen,
     btMenuOpen,
     settingsOpen,
@@ -474,6 +481,7 @@ export default function App() {
     setVolume,
     playContext,
     onBack: goBack,
+    onOpenPlaylists: () => setPlaylistsOpen(true),
     onTogglePowerMenu: () => setPowerMenuOpen((v) => !v),
     onSleep,
     onOpenDebug: openDebug,
@@ -525,6 +533,16 @@ export default function App() {
         />
       ) : null}
       {btMenuOpen ? <BluetoothMenu online={online} onClose={() => setBtMenuOpen(false)} /> : null}
+      {playlistsOpen ? (
+        <Playlists
+          open={playlistsOpen}
+          onClose={() => setPlaylistsOpen(false)}
+          onPlay={(uri) => {
+            setPlaylistsOpen(false)
+            void playContext(uri).catch(() => notify(`Couldn't play this playlist`, { variant: 'error' }))
+          }}
+        />
+      ) : null}
       <DebugScreen open={debugOpen} onClose={() => setDebugOpen(false)} onReport={setReportId} />
       {pairing ? <PairingDialog passkey={pairing.passkey} address={pairing.address} /> : null}
       {reportId ? <ReportDialog id={reportId} onDismiss={() => setReportId(null)} /> : null}

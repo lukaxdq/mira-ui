@@ -26,6 +26,16 @@ export interface ConnectDevice {
   can_transfer: boolean
 }
 
+// a Spotify playlist (from /web-api/v1/me/playlists)
+export interface Playlist {
+  id: string
+  name: string
+  uri: string
+  image_url: string
+  track_count: number
+  owner: string
+}
+
 export interface QueueTrack {
   uri: string
   track_id: string

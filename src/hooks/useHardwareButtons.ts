@@ -39,6 +39,8 @@ export interface UseHardwareButtonsParams {
   playContext: (uri: string) => Promise<void> | void
   // back button (esc), go back one step, or no-op
   onBack: () => void
+  // back button double-press: open the playlists picker
+  onOpenPlaylists: () => void
   // power button (KeyM): short press opens the power menu
   onTogglePowerMenu: () => void
   // power button double-press: sleep shortcut
@@ -60,6 +62,9 @@ const POWER_LONG_PRESS_MS = 600
 // power button: a second press within this window counts as a double-press
 const POWER_DOUBLE_MS = 350
 
+// back button: a second press within this window opens the playlists
+const BACK_DOUBLE_MS = 350
+
 export interface VolumeOverlayState {
   visible: boolean
   value: number
@@ -79,6 +84,7 @@ export function useHardwareButtons({
   setVolume,
   playContext,
   onBack,
+  onOpenPlaylists,
   onTogglePowerMenu,
   onSleep,
   onOpenDebug,
@@ -194,20 +200,42 @@ export function useHardwareButtons({
   }, [status, stepVolume])
 
   // knob press (Enter) is play/pause, back (Escape) is go back.
+  // A second back press within BACK_DOUBLE_MS opens the playlists instead.
   // preventDefault so Enter doesnt also trigger a focused button like the menu.
   useEffect(() => {
+    let backAt = 0
+    let pendingBack: number | undefined
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
         e.preventDefault()
         onPlayPause()
       } else if (e.key === 'Escape') {
         e.preventDefault()
-        onBack()
+        const now = Date.now()
+        if (now - backAt <= BACK_DOUBLE_MS) {
+          // double press -> playlists
+          backAt = 0
+          if (pendingBack != null) {
+            window.clearTimeout(pendingBack)
+            pendingBack = undefined
+          }
+          onOpenPlaylists()
+        } else {
+          backAt = now
+          if (pendingBack != null) window.clearTimeout(pendingBack)
+          pendingBack = window.setTimeout(() => {
+            pendingBack = undefined
+            onBack()
+          }, BACK_DOUBLE_MS)
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onPlayPause, onBack])
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      if (pendingBack != null) window.clearTimeout(pendingBack)
+    }
+  }, [onPlayPause, onBack, onOpenPlaylists])
 
   // preset buttons
   // short press = play the assigned context

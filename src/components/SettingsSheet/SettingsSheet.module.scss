@@ -22,6 +22,10 @@
   width: 540px;
   max-width: calc(100% - #{$s-6});
   max-height: calc(100% - #{$s-7});
+  // flex item of .root (flex-center): without min-height:0 the panel's
+  // min-height:auto keeps it at content height, so max-height is ignored
+  // and it overflows instead of scrolling
+  min-height: 0;
   overflow-y: auto;
   @include hide-scrollbar;
   // four rows have to clear 448px at 100%: padding 40 + title 38.8 + 4 gaps 64
@@ -112,4 +116,112 @@
   font-variant-numeric: tabular-nums;
   color: $text-secondary;
   white-space: nowrap;
+}
+
+.segRow {
+  display: flex;
+  @include flex-gap-x($s-2);
+}
+
+.seg {
+  flex: 1 1 0;
+  padding: $s-2 $s-3;
+  border-radius: $r-md;
+  background: rgba(255, 255, 255, 0.07);
+  color: $text-secondary;
+  font-size: $fs-md;
+  font-weight: $fw-medium;
+  transition:
+    background-color $dur-base $ease-standard,
+    color $dur-base $ease-standard;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.segActive {
+  background: rgba(30, 215, 96, 0.16);
+  color: $accent;
+}
+
+// timezone dropdown
+.dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.dropdownDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.dropdownTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: $s-2 $s-3;
+  border-radius: $r-md;
+  background: rgba(255, 255, 255, 0.07);
+  color: $text-primary;
+  font-size: $fs-md;
+  font-weight: $fw-medium;
+  transition:
+    background-color $dur-base $ease-standard,
+    color $dur-base $ease-standard;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.dropdownCaret {
+  color: $text-secondary;
+  transition: transform $dur-fast $ease-standard;
+}
+
+.dropdownCaretOpen {
+  transform: rotate(180deg);
+}
+
+.dropdownList {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: $z-menu;
+  // 8 rows visible, then scroll
+  max-height: 8 * 36px;
+  overflow-y: auto;
+  @include hide-scrollbar;
+  margin-top: $s-2;
+  padding: $s-1;
+  background: $surface-elev;
+  border: 1px solid $divider;
+  border-radius: $r-lg;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  @include flex-gap-y($s-1);
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: $s-2 $s-3;
+  border-radius: $r-md;
+  color: $text-secondary;
+  font-size: $fs-md;
+  font-weight: $fw-medium;
+  transition:
+    background-color $dur-fast $ease-standard,
+    color $dur-fast $ease-standard;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.dropdownItemActive {
+  background: rgba(30, 215, 96, 0.16);
+  color: $accent;
 }

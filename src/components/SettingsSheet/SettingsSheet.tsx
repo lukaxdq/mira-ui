@@ -21,6 +21,18 @@ interface Props {
   phoneVolume?: boolean
 }
 
+const TZ_MIN = -720 // -12h
+const TZ_MAX = 840 // +14h
+const TZ_STEP = 15
+
+function fmtTzOffset(minutes: number): string {
+  const sign = minutes >= 0 ? '+' : '−'
+  const abs = Math.abs(minutes)
+  const h = Math.floor(abs / 60)
+  const m = abs % 60
+  return `GMT${sign}${h}${m ? ':' + m.toString().padStart(2, '0') : ''}`
+}
+
 const OFFSET_MIN = -500
 const OFFSET_MAX = 500
 const OFFSET_STEP = 50
@@ -31,7 +43,7 @@ function fmtOffset(ms: number): string {
 }
 
 function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
-  const { lyricOffsetMs, volumeStepPct, autoBrightness, brightness, uiScalePct } = useSettings()
+  const { lyricOffsetMs, volumeStepPct, autoBrightness, brightness, uiScalePct, timezoneMode, utcOffsetMinutes, timeFormat } = useSettings()
 
   // applying the scale mid-drag moves this very panel under the finger, which has no
   // fixed point near a notch boundary and makes the whole ui flicker between two sizes.
@@ -113,6 +125,56 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
           />
         </SettingRow>
 
+        <SettingRow
+          icon={<ClockIcon />}
+          label="Time format"
+          value={timeFormat === '12h' ? '12-hour' : '24-hour'}
+        >
+          <div className={styles.segRow}>
+            {(['12h', '24h'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={`${styles.seg} ${timeFormat === f ? styles.segActive : ''}`}
+                aria-pressed={timeFormat === f}
+                onClick={() => updateSettings({ timeFormat: f })}
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </SettingRow>
+
+        <div className={styles.row}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={timezoneMode === 'manual'}
+            aria-label="Manual time zone"
+            className={`${styles.chip} ${styles.chipBtn} ${timezoneMode === 'manual' ? styles.chipOn : ''}`}
+            onClick={() =>
+              updateSettings({
+                timezoneMode: timezoneMode === 'manual' ? 'auto' : 'manual',
+              })
+            }
+          >
+            <ClockIcon />
+          </button>
+          <div className={styles.rowMain}>
+            <div className={styles.rowHead}>
+              <span className={styles.label}>Time zone</span>
+              <span className={styles.value}>
+                {timezoneMode === 'auto' ? 'Auto' : fmtTzOffset(utcOffsetMinutes)}
+              </span>
+            </div>
+            <TimezoneSelect
+              value={utcOffsetMinutes}
+              disabled={timezoneMode === 'auto'}
+              onSelect={(v) => updateSettings({ utcOffsetMinutes: v })}
+            />
+          </div>
+        </div>
+
         <div className={styles.row}>
           <button
             type="button"
@@ -145,6 +207,58 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// scrollable dropdown of UTC offsets in 15-min steps (-12h..+14h)
+function TimezoneSelect({
+  value,
+  disabled,
+  onSelect,
+}: {
+  value: number
+  disabled: boolean
+  onSelect: (v: number) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const offsets: number[] = []
+  for (let m = TZ_MIN; m <= TZ_MAX; m += TZ_STEP) offsets.push(m)
+
+  return (
+    <div className={`${styles.dropdown} ${disabled ? styles.dropdownDisabled : ''}`}>
+      <button
+        type="button"
+        className={styles.dropdownTrigger}
+        disabled={disabled}
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span>{fmtTzOffset(value)}</span>
+        <span className={`${styles.dropdownCaret} ${open ? styles.dropdownCaretOpen : ''}`}>
+          ▾
+        </span>
+      </button>
+      {open ? (
+        <div className={styles.dropdownList} role="listbox">
+          {offsets.map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="option"
+              aria-selected={m === value}
+              className={`${styles.dropdownItem} ${m === value ? styles.dropdownItemActive : ''}`}
+              onClick={() => {
+                onSelect(m)
+                setOpen(false)
+              }}
+            >
+              {fmtTzOffset(m)}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -205,6 +319,15 @@ function SpeakerIcon() {
         strokeWidth="2"
         strokeLinecap="round"
       />
+    </svg>
+  )
+}
+
+function ClockIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 7.5V12l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   )
 }
