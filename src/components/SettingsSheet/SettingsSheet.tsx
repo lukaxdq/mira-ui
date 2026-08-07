@@ -1,4 +1,4 @@
-import { memo, useState, type ReactNode } from 'react'
+import { memo, useEffect, useState, type ReactNode } from 'react'
 import {
   BRIGHTNESS_MAX,
   BRIGHTNESS_MIN,
@@ -11,6 +11,7 @@ import {
   VOLUME_STEP_MAX,
   VOLUME_STEP_MIN,
 } from '@/settings'
+import { detectTimezone, useDetectedZone } from '@/utils/timezone'
 import { NotchedSlider } from './NotchedSlider'
 import styles from './SettingsSheet.module.scss'
 
@@ -44,6 +45,12 @@ function fmtOffset(ms: number): string {
 
 function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
   const { lyricOffsetMs, volumeStepPct, autoBrightness, brightness, uiScalePct, timezoneMode, utcOffsetMinutes, timeFormat } = useSettings()
+  const detected = useDetectedZone()
+
+  // kick off IP-based timezone detection; a warm cache resolves without network
+  useEffect(() => {
+    void detectTimezone()
+  }, [])
 
   // applying the scale mid-drag moves this very panel under the finger, which has no
   // fixed point near a notch boundary and makes the whole ui flicker between two sizes.
@@ -71,6 +78,8 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
       >
         <div className={styles.title}>Settings</div>
 
+        <div className={styles.sectionLabel}>Display</div>
+
         {/* first on purpose: at the largest display size the panel scrolls, and this is
             the one control that has to stay reachable to get back down */}
         <SettingRow icon={<DisplaySizeIcon />} label="Display size" value={`${shownScale}%`}>
@@ -93,6 +102,40 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
             defaultValue={UI_SCALE_DEFAULT}
           />
         </SettingRow>
+
+        <div className={styles.row}>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoBrightness}
+            aria-label="Auto brightness"
+            className={`${styles.chip} ${styles.chipBtn} ${autoBrightness ? styles.chipOn : ''}`}
+            onClick={() => updateSettings({ autoBrightness: !autoBrightness })}
+          >
+            <SunIcon />
+          </button>
+          <div className={styles.rowMain}>
+            <div className={styles.rowHead}>
+              <span className={styles.label}>Brightness</span>
+              <span className={styles.value}>
+                {autoBrightness ? 'Auto' : `${brightness * 10}%`}
+              </span>
+            </div>
+            <NotchedSlider
+              ariaLabel="Brightness"
+              value={brightness}
+              min={BRIGHTNESS_MIN}
+              max={BRIGHTNESS_MAX}
+              step={1}
+              onChange={(v) => updateSettings({ brightness: v })}
+              format={(v) => `${v * 10}%`}
+              disabled={autoBrightness}
+              defaultValue={5}
+            />
+          </div>
+        </div>
+
+        <div className={styles.sectionLabel}>Playback</div>
 
         <SettingRow icon={<LyricsIcon />} label="Lyric sync" value={fmtOffset(lyricOffsetMs)}>
           <NotchedSlider
@@ -124,6 +167,8 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
             defaultValue={2}
           />
         </SettingRow>
+
+        <div className={styles.sectionLabel}>Clock</div>
 
         <SettingRow
           icon={<ClockIcon />}
@@ -164,45 +209,17 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
             <div className={styles.rowHead}>
               <span className={styles.label}>Time zone</span>
               <span className={styles.value}>
-                {timezoneMode === 'auto' ? 'Auto' : fmtTzOffset(utcOffsetMinutes)}
+                {timezoneMode === 'auto'
+                  ? detected
+                    ? `Auto • ${fmtTzOffset(detected.offsetMinutes)}`
+                    : 'Auto'
+                  : fmtTzOffset(utcOffsetMinutes)}
               </span>
             </div>
             <TimezoneSelect
               value={utcOffsetMinutes}
               disabled={timezoneMode === 'auto'}
               onSelect={(v) => updateSettings({ utcOffsetMinutes: v })}
-            />
-          </div>
-        </div>
-
-        <div className={styles.row}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={autoBrightness}
-            aria-label="Auto brightness"
-            className={`${styles.chip} ${styles.chipBtn} ${autoBrightness ? styles.chipOn : ''}`}
-            onClick={() => updateSettings({ autoBrightness: !autoBrightness })}
-          >
-            <SunIcon />
-          </button>
-          <div className={styles.rowMain}>
-            <div className={styles.rowHead}>
-              <span className={styles.label}>Brightness</span>
-              <span className={styles.value}>
-                {autoBrightness ? 'Auto' : `${brightness * 10}%`}
-              </span>
-            </div>
-            <NotchedSlider
-              ariaLabel="Brightness"
-              value={brightness}
-              min={BRIGHTNESS_MIN}
-              max={BRIGHTNESS_MAX}
-              step={1}
-              onChange={(v) => updateSettings({ brightness: v })}
-              format={(v) => `${v * 10}%`}
-              disabled={autoBrightness}
-              defaultValue={5}
             />
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSettings } from '@/settings'
+import { detectTimezone, useDetectedZone } from '@/utils/timezone'
 import styles from './ClockScreen.module.scss'
 
 interface Props {
@@ -9,13 +10,19 @@ interface Props {
 // The device clock is set to UTC (see firmware clock_sync). getTimezoneOffset()
 // returns the local offset in minutes EAST of UTC, i.e. UTC = local - offset,
 // so we add it to the UTC wall time to get the local clock.
-function localOffsetMinutes(mode: 'auto' | 'manual', manual: number): number {
+//
+// In auto mode the real offset comes from the IP-detected IANA zone (see
+// utils/timezone.ts) — the device's raw getTimezoneOffset() is always 0 since
+// the system clock runs in UTC. The device-zone fallback only applies until
+// the detection resolves (or offline with no cache).
+function localOffsetMinutes(mode: 'auto' | 'manual', manual: number, detected: number | null): number {
   if (mode === 'manual') return manual
-  return -new Date().getTimezoneOffset()
+  return detected ?? -new Date().getTimezoneOffset()
 }
 
 export default function ClockScreen({ onExit }: Props) {
   const { timezoneMode, utcOffsetMinutes, timeFormat } = useSettings()
+  const detected = useDetectedZone()
   const [now, setNow] = useState<Date>(new Date())
 
   useEffect(() => {
@@ -23,7 +30,12 @@ export default function ClockScreen({ onExit }: Props) {
     return () => clearInterval(t)
   }, [])
 
-  const offset = localOffsetMinutes(timezoneMode, utcOffsetMinutes)
+  // kick off IP-based detection once; a warm cache resolves without network
+  useEffect(() => {
+    void detectTimezone()
+  }, [])
+
+  const offset = localOffsetMinutes(timezoneMode, utcOffsetMinutes, detected?.offsetMinutes ?? null)
   // shift the UTC wall time by the offset, then read the fields as UTC
   const local = new Date(now.getTime() + offset * 60_000)
   const h24 = local.getUTCHours()

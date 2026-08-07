@@ -54,6 +54,19 @@
   margin-bottom: $s-2;
 }
 
+// group labels ("Display", "Playback", "Clock") that organize the settings panel
+.sectionLabel {
+  font-size: $fs-xs;
+  font-weight: $fw-semibold;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: $text-tertiary;
+  padding: $s-1 $s-2 0;
+  // the panel already flows with flex-gap-y; pull the label tighter to its
+  // section's first row so the group reads as one unit
+  margin-top: $s-1;
+}
+
 .row {
   display: flex;
   align-items: flex-end;

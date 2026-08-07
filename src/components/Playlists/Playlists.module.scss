@@ -61,12 +61,13 @@
 }
 
 // horizontal row of playlist cards
+// NOTE: uses margin (not flex `gap`) because the Car Thing's Chromium 69
+// predates flexbox gap support (Chrome 84+)
 .row {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
-  gap: $s-5;
   width: max-content;
   min-width: 100%;
 }
@@ -74,6 +75,11 @@
 .cell {
   flex: 0 0 auto;
   width: 150px;
+  margin-right: $s-7;
+
+  &:last-child {
+    margin-right: 0;
+  }
 }
 
 .card {
@@ -167,7 +173,8 @@
 .playingBars {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  // flex gap needs Chrome 84+; the Car Thing's Chromium is 69, so use margins
+  @include flex-gap-x(2px);
   height: 14px;
 
   i {

@@ -22,7 +22,8 @@
 
 .headerBtns {
   display: flex;
-  gap: 8px;
+  // flex gap needs Chrome 84+; the Car Thing's Chromium is 69, so use margins
+  @include flex-gap-x(8px);
 }
 
 .close {
@@ -54,7 +55,8 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 16px;
+  // flex gap needs Chrome 84+; the Car Thing's Chromium is 69, so use margins
+  @include flex-gap-x(16px);
   padding: 3px 0;
   border-bottom: 1px solid $divider;
   font-size: 15px;
