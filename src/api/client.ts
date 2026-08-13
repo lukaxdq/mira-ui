@@ -84,13 +84,92 @@ export async function fetchDebugStatus(signal?: AbortSignal): Promise<DebugStatu
   return (await res.json()) as DebugStatus
 }
 
-// uploads the support bundle via the daemon
-export async function sendDebugReport(signal?: AbortSignal): Promise<string> {
+function getDiscordWebhook(): string {
+  const url = import.meta.env.VITE_DISCORD_WEBHOOK_URL as string | undefined
+  if (!url) throw new Error('No Webhook Url')
+  return url
+}
+
+function fmtUptimeStr(secs: number): string {
+  if (secs < 60) return `${secs}s`
+  const m = Math.floor(secs / 60)
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ${m % 60}m`
+  const d = Math.floor(h / 24)
+  return `${d}d ${h % 24}h`
+}
+
+function buildDiscordEmbed(id: string, status: DebugStatus | null): object {
+  const fields: Array<{ name: string; value: string; inline: boolean }> = []
+
+  if (status) {
+    fields.push(
+      { name: 'Firmware', value: status.firmware_version, inline: true },
+      { name: 'Daemon', value: status.daemon_version, inline: true },
+      { name: 'Uptime', value: fmtUptimeStr(status.uptime_secs), inline: true },
+      { name: 'SoC Temp', value: `${status.temp_c}°C`, inline: true },
+      { name: 'RAM Free', value: `${status.ram_free_mb}/${status.ram_total_mb} MB`, inline: true },
+      { name: 'Disk Free', value: `${status.disk_free_mb} MB`, inline: true },
+      { name: 'Network', value: status.online ? `online · ${status.network_path} · ${status.ip}` : 'offline', inline: false },
+      { name: 'Spotify', value: status.spotify, inline: true },
+      { name: 'Phone (iAP2)', value: status.phone_volume, inline: true },
+      { name: 'Android (HID)', value: status.android_volume, inline: true },
+    )
+    if (status.bluetooth_device) {
+      fields.push({ name: 'BT Device', value: status.bluetooth_device, inline: true })
+    }
+    const problems = [
+      ...(status.recent_problems ?? []).map((p) => `- ${p}`),
+      ...(status.previous_problems ?? []).map((p) => `(prev) ${p}`),
+    ]
+    fields.push({
+      name: 'Problems',
+      value: problems.length > 0 ? problems.join('\n').slice(0, 1024) : 'none',
+      inline: false,
+    })
+  }
+
+  return {
+    username: 'Mira Bug Report',
+    avatar_url: 'https://raw.githubusercontent.com/usenocturne/mira/refs/heads/main/mira-ui/public/icon.png',
+    embeds: [
+      {
+        title: `Bug Report \`${id}\``,
+        color: 0x1ed760,
+        fields,
+        footer: { text: `Sent from Car Thing · ${new Date().toUTCString()}` },
+      },
+    ],
+  }
+}
+
+// Silently forward the report to Discord — fire-and-forget, never throws on network failure,
+// but throws synchronously if VITE_DISCORD_WEBHOOK_URL is not set.
+function postToDiscord(id: string, status: DebugStatus | null): void {
+  const webhook = getDiscordWebhook() // throws 'No Webhook Url' if env var missing
+  const payload = buildDiscordEmbed(id, status)
+  fetch(webhook, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => {
+    // best-effort only; a Discord network failure must not surface to the user
+  })
+}
+
+// uploads the support bundle via the daemon and silently mirrors it to Discord
+export async function sendDebugReport(
+  signal?: AbortSignal,
+  statusSnapshot?: DebugStatus | null,
+): Promise<string> {
   const res = await fetch(`${API_BASE}/debug/report`, { method: 'POST', signal })
   const body = await res.json().catch(() => null)
   if (!res.ok) throw new Error(body?.error || `debug/report ${res.status}`)
   if (!body?.id) throw new Error('no report id')
-  return body.id as string
+  const id = body.id as string
+  postToDiscord(id, statusSnapshot ?? null)
+  return id
 }
 
 export async function fetchConnectDevices(signal?: AbortSignal): Promise<ConnectDevice[]> {

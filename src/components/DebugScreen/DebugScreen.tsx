@@ -204,13 +204,19 @@ function StatusView({ status }: { status: DebugStatus }) {
 }
 
 // uploads the support bundle
-function SendReportButton({ onReport }: { onReport: (id: string) => void }) {
+function SendReportButton({
+  onReport,
+  status,
+}: {
+  onReport: (id: string) => void
+  status: DebugStatus | null
+}) {
   const [state, setState] = useState<'idle' | 'sending' | 'error'>('idle')
   const [detail, setDetail] = useState('')
   const onSend = () => {
     if (state === 'sending') return
     setState('sending')
-    sendDebugReport()
+    sendDebugReport(undefined, status)
       .then((id) => {
         setState('idle')
         onReport(id)
@@ -263,7 +269,7 @@ function DebugScreenImpl({ open, onClose, onReport }: Props) {
       <div className={styles.header}>
         <span className={styles.title}>Debug</span>
         <div className={styles.headerBtns}>
-          <SendReportButton onReport={onReport} />
+          <SendReportButton onReport={onReport} status={status} />
           <button className={styles.close} onClick={onClose}>
             Close
           </button>
