@@ -28,16 +28,16 @@
   min-height: 0;
   overflow-y: auto;
   @include hide-scrollbar;
-  // four rows have to clear 448px at 100%: padding 40 + title 38.8 + 4 gaps 64
-  // + 4 rows 297.6 = 440.4. it scrolls at larger display sizes, hence hide-scrollbar
+  // six rows + three section labels have to clear 448px at 100%; it scrolls at
+  // larger display sizes, hence hide-scrollbar
   padding: $s-5;
   background: $bg;
   border-radius: $r-2xl;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
 
   @include column;
-  // four rows at $s-6 overflow the panel even at 100%
-  @include flex-gap-y($s-4);
+  // tighter rhythm so the grouped panel reads as one unit instead of a wall of rows
+  @include flex-gap-y($s-3);
 
   transform: translateY(12px) scale(0.98);
   opacity: 0;
@@ -51,7 +51,7 @@
   font-weight: $fw-semibold;
   letter-spacing: -0.01em;
   color: $text-primary;
-  margin-bottom: $s-2;
+  margin-bottom: $s-1;
 }
 
 // group labels ("Display", "Playback", "Clock") that organize the settings panel
@@ -106,7 +106,7 @@
   flex: 1 1 auto;
   min-width: 0;
   @include column;
-  @include flex-gap-y($s-3);
+  @include flex-gap-y($s-2);
 }
 
 .rowHead {
@@ -118,12 +118,20 @@
 }
 
 .label {
+  // shrinkable so a long label ("Volume per turn") never collides with the
+  // nowrap value ("Auto • GMT−5:00"); truncates with an ellipsis as a last resort
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: $fs-lg;
   font-weight: $fw-medium;
   color: $text-primary;
 }
 
 .value {
+  flex: 0 0 auto;
   font-size: $fs-md;
   font-weight: $fw-medium;
   font-variant-numeric: tabular-nums;

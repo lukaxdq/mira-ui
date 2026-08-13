@@ -14,8 +14,12 @@ export const server = setupServer(
   // timer run trips onUnhandledRequest: 'error' with a confusing failure
   http.get('*/settings', () => HttpResponse.json({ v: 1 })),
   http.put('*/settings', () => HttpResponse.json({ ok: true })),
-  // timezone auto-detection IP providers (SettingsSheet + ClockScreen fire this on
-  // mount; UTC keeps the response deterministic and isolated from the real network)
+  // timezone auto-detection: the daemon endpoint is the primary path (SettingsSheet
+  // + ClockScreen fire this on mount); the external providers are the fallback.
+  // UTC keeps the response deterministic and isolated from the real network.
+  http.get('*/system/timezone', () =>
+    HttpResponse.json({ zone: 'UTC', offset_minutes: 0 }),
+  ),
   http.get('https://ipapi.co/json/', () => HttpResponse.json({ timezone: 'UTC' })),
   http.get('https://get.geojs.io/v1/ip/geo.json', () =>
     HttpResponse.json({ timezone: 'UTC' }),

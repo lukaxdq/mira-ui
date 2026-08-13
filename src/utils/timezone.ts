@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { API_BASE } from '@/config'
 
 // IP-based auto timezone detection for the ClockScreen.
 //
@@ -6,6 +7,12 @@ import { useSyncExternalStore } from 'react'
 // Date.prototype.getTimezoneOffset() always returns 0 and "Auto" would show UTC
 // for everyone. Instead we geolocate the IP to an IANA zone and compute that
 // zone's CURRENT UTC offset.
+//
+// Primary path: the local daemon's /system/timezone endpoint. The daemon does the
+// network call server-side (no CORS), so it works even when the browser can't
+// reach external IP-geolocation providers directly (Chromium 69 on the Car Thing).
+// The external provider chain below is only a fallback for dev mode without a
+// daemon running.
 //
 // Chromium-69 constraints honored here:
 //  - no AbortSignal.timeout() (Chrome 103+), so we drive AbortController manually
@@ -108,7 +115,31 @@ async function fetchJson(url: string, pick: ZonePicker): Promise<string | null> 
   }
 }
 
+// Ask the local daemon for the zone + offset. The daemon does the network call
+// (no CORS), so this is reliable on the Car Thing where direct browser egress
+// to IP-geolocation providers fails.
+async function fetchFromDaemon(): Promise<string | null> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS)
+  try {
+    const res = await fetch(`${API_BASE}/system/timezone`, { signal: ctrl.signal })
+    if (!res.ok) return null
+    const data = (await res.json()) as { zone?: unknown; offset_minutes?: unknown } | null
+    if (data && typeof data.zone === 'string') return data.zone
+    return null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function fetchZone(): Promise<string | null> {
+  // Primary: the daemon resolves it server-side (reliable on-device).
+  const daemonZone = await fetchFromDaemon()
+  if (daemonZone && offsetMinutesForZone(daemonZone) !== null) return daemonZone
+
+  // Fallback: external providers (dev mode without a daemon).
   for (const { url, pick } of PROVIDERS) {
     const zone = await fetchJson(url, pick)
     if (zone && offsetMinutesForZone(zone) !== null) return zone
