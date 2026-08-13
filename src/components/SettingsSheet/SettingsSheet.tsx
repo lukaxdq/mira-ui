@@ -78,149 +78,158 @@ function SettingsSheetImpl({ open, onClose, phoneVolume = false }: Props) {
       >
         <div className={styles.title}>Settings</div>
 
-        <div className={styles.sectionLabel}>Display</div>
+        {/* Display Section */}
+        <div className={styles.section}>
+          <div className={styles.sectionLabel}>Display</div>
 
-        {/* first on purpose: at the largest display size the panel scrolls, and this is
-            the one control that has to stay reachable to get back down */}
-        <SettingRow icon={<DisplaySizeIcon />} label="Display size" value={`${shownScale}%`}>
-          <NotchedSlider
-            ariaLabel="Display size"
-            value={shownScale}
-            min={UI_SCALE_MIN}
-            max={UI_SCALE_MAX}
-            step={UI_SCALE_STEP}
-            onChange={setScalePreview}
-            onCommit={(v) => {
-              setScalePreview(null)
-              // the sheet was dismissed mid-gesture, so drop the drag instead of
-              // resizing the whole ui after it's gone
-              if (!open) return
-              updateSettings({ uiScalePct: v })
-            }}
-            onCancel={() => setScalePreview(null)}
-            format={(v) => `${v}%`}
-            defaultValue={UI_SCALE_DEFAULT}
-          />
-        </SettingRow>
-
-        <div className={styles.row}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={autoBrightness}
-            aria-label="Auto brightness"
-            className={`${styles.chip} ${styles.chipBtn} ${autoBrightness ? styles.chipOn : ''}`}
-            onClick={() => updateSettings({ autoBrightness: !autoBrightness })}
-          >
-            <SunIcon />
-          </button>
-          <div className={styles.rowMain}>
-            <div className={styles.rowHead}>
-              <span className={styles.label}>Brightness</span>
-              <span className={styles.value}>
-                {autoBrightness ? 'Auto' : `${brightness * 10}%`}
-              </span>
-            </div>
+          {/* first on purpose: at the largest display size the panel scrolls, and this is
+              the one control that has to stay reachable to get back down */}
+          <SettingRow icon={<DisplaySizeIcon />} label="Display size" value={`${shownScale}%`}>
             <NotchedSlider
-              ariaLabel="Brightness"
-              value={brightness}
-              min={BRIGHTNESS_MIN}
-              max={BRIGHTNESS_MAX}
-              step={1}
-              onChange={(v) => updateSettings({ brightness: v })}
-              format={(v) => `${v * 10}%`}
-              disabled={autoBrightness}
-              defaultValue={5}
+              ariaLabel="Display size"
+              value={shownScale}
+              min={UI_SCALE_MIN}
+              max={UI_SCALE_MAX}
+              step={UI_SCALE_STEP}
+              onChange={setScalePreview}
+              onCommit={(v) => {
+                setScalePreview(null)
+                // the sheet was dismissed mid-gesture, so drop the drag instead of
+                // resizing the whole ui after it's gone
+                if (!open) return
+                updateSettings({ uiScalePct: v })
+              }}
+              onCancel={() => setScalePreview(null)}
+              format={(v) => `${v}%`}
+              defaultValue={UI_SCALE_DEFAULT}
             />
+          </SettingRow>
+
+          <div className={styles.row}>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoBrightness}
+              aria-label="Auto brightness"
+              className={`${styles.chip} ${styles.chipBtn} ${autoBrightness ? styles.chipOn : ''}`}
+              onClick={() => updateSettings({ autoBrightness: !autoBrightness })}
+            >
+              <SunIcon />
+            </button>
+            <div className={styles.rowMain}>
+              <div className={styles.rowHead}>
+                <span className={styles.label}>Brightness</span>
+                <span className={styles.value}>
+                  {autoBrightness ? 'Auto' : `${brightness * 10}%`}
+                </span>
+              </div>
+              <NotchedSlider
+                ariaLabel="Brightness"
+                value={brightness}
+                min={BRIGHTNESS_MIN}
+                max={BRIGHTNESS_MAX}
+                step={1}
+                onChange={(v) => updateSettings({ brightness: v })}
+                format={(v) => `${v * 10}%`}
+                disabled={autoBrightness}
+                defaultValue={5}
+              />
+            </div>
           </div>
         </div>
 
-        <div className={styles.sectionLabel}>Playback</div>
+        {/* Playback Section */}
+        <div className={styles.section}>
+          <div className={styles.sectionLabel}>Playback</div>
 
-        <SettingRow icon={<LyricsIcon />} label="Lyric sync" value={fmtOffset(lyricOffsetMs)}>
-          <NotchedSlider
-            ariaLabel="Lyric sync offset"
-            value={lyricOffsetMs}
-            min={OFFSET_MIN}
-            max={OFFSET_MAX}
-            step={OFFSET_STEP}
-            onChange={(v) => updateSettings({ lyricOffsetMs: v })}
-            format={fmtOffset}
-            defaultValue={0}
-          />
-        </SettingRow>
-
-        <SettingRow
-          icon={<SpeakerIcon />}
-          label="Volume per turn"
-          value={phoneVolume ? 'Set by phone' : `${volumeStepPct}%`}
-        >
-          <NotchedSlider
-            ariaLabel="Volume per turn"
-            value={volumeStepPct}
-            min={VOLUME_STEP_MIN}
-            max={VOLUME_STEP_MAX}
-            step={1}
-            onChange={(v) => updateSettings({ volumeStepPct: v })}
-            format={(v) => `${v}%`}
-            disabled={phoneVolume}
-            defaultValue={2}
-          />
-        </SettingRow>
-
-        <div className={styles.sectionLabel}>Clock</div>
-
-        <SettingRow
-          icon={<ClockIcon />}
-          label="Time format"
-          value={timeFormat === '12h' ? '12-hour' : '24-hour'}
-        >
-          <div className={styles.segRow}>
-            {(['12h', '24h'] as const).map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={`${styles.seg} ${timeFormat === f ? styles.segActive : ''}`}
-                aria-pressed={timeFormat === f}
-                onClick={() => updateSettings({ timeFormat: f })}
-              >
-                {f.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </SettingRow>
-
-        <div className={styles.row}>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={timezoneMode === 'manual'}
-            aria-label="Manual time zone"
-            className={`${styles.chip} ${styles.chipBtn} ${timezoneMode === 'manual' ? styles.chipOn : ''}`}
-            onClick={() =>
-              updateSettings({
-                timezoneMode: timezoneMode === 'manual' ? 'auto' : 'manual',
-              })
-            }
-          >
-            <ClockIcon />
-          </button>
-          <div className={styles.rowMain}>
-            <div className={styles.rowHead}>
-              <span className={styles.label}>Time zone</span>
-              <span className={styles.value}>
-                {timezoneMode === 'auto'
-                  ? detected
-                    ? `Auto • ${fmtTzOffset(detected.offsetMinutes)}`
-                    : 'Auto'
-                  : fmtTzOffset(utcOffsetMinutes)}
-              </span>
-            </div>
-            <TimezoneSelect
-              value={utcOffsetMinutes}
-              disabled={timezoneMode === 'auto'}
-              onSelect={(v) => updateSettings({ utcOffsetMinutes: v })}
+          <SettingRow icon={<LyricsIcon />} label="Lyric sync" value={fmtOffset(lyricOffsetMs)}>
+            <NotchedSlider
+              ariaLabel="Lyric sync offset"
+              value={lyricOffsetMs}
+              min={OFFSET_MIN}
+              max={OFFSET_MAX}
+              step={OFFSET_STEP}
+              onChange={(v) => updateSettings({ lyricOffsetMs: v })}
+              format={fmtOffset}
+              defaultValue={0}
             />
+          </SettingRow>
+
+          <SettingRow
+            icon={<SpeakerIcon />}
+            label="Volume per turn"
+            value={phoneVolume ? 'Set by phone' : `${volumeStepPct}%`}
+          >
+            <NotchedSlider
+              ariaLabel="Volume per turn"
+              value={volumeStepPct}
+              min={VOLUME_STEP_MIN}
+              max={VOLUME_STEP_MAX}
+              step={1}
+              onChange={(v) => updateSettings({ volumeStepPct: v })}
+              format={(v) => `${v}%`}
+              disabled={phoneVolume}
+              defaultValue={2}
+            />
+          </SettingRow>
+        </div>
+
+        {/* Clock Section */}
+        <div className={styles.section}>
+          <div className={styles.sectionLabel}>Clock</div>
+
+          <SettingRow
+            icon={<ClockIcon />}
+            label="Time format"
+            value={timeFormat === '12h' ? '12-hour' : '24-hour'}
+          >
+            <div className={styles.segRow}>
+              {(['12h', '24h'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className={`${styles.seg} ${timeFormat === f ? styles.segActive : ''}`}
+                  aria-pressed={timeFormat === f}
+                  onClick={() => updateSettings({ timeFormat: f })}
+                >
+                  {f.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </SettingRow>
+
+          <div className={styles.row}>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={timezoneMode === 'manual'}
+              aria-label="Manual time zone"
+              className={`${styles.chip} ${styles.chipBtn} ${timezoneMode === 'manual' ? styles.chipOn : ''}`}
+              onClick={() =>
+                updateSettings({
+                  timezoneMode: timezoneMode === 'manual' ? 'auto' : 'manual',
+                })
+              }
+            >
+              <ClockIcon />
+            </button>
+            <div className={styles.rowMain}>
+              <div className={styles.rowHead}>
+                <span className={styles.label}>Time zone</span>
+                <span className={styles.value}>
+                  {timezoneMode === 'auto'
+                    ? detected
+                      ? `Auto • ${fmtTzOffset(detected.offsetMinutes)}`
+                      : 'Auto'
+                    : fmtTzOffset(utcOffsetMinutes)}
+                </span>
+              </div>
+              <TimezoneSelect
+                value={utcOffsetMinutes}
+                disabled={timezoneMode === 'auto'}
+                onSelect={(v) => updateSettings({ utcOffsetMinutes: v })}
+              />
+            </div>
           </div>
         </div>
       </div>
